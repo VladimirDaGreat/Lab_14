@@ -31,24 +31,15 @@ class Block(pygame.sprite.Sprite):
     def __init__(self):
         """ Constructor, create the image of the block. """
         super().__init__()
+        
         self.image = pygame.Surface([20, 20])
         self.image.fill(BLACK)
         self.rect = self.image.get_rect()
  
-    def reset_pos(self):
-        """ Called when the block is 'collected' or falls off
-            the screen. """
-        self.rect.y = random.randrange(-300, -20)
-        self.rect.x = random.randrange(SCREEN_WIDTH)
- 
-    def update(self):
-        """ Automatically called when we need to move the block. """
-        self.rect.y += 1
- 
-        if self.rect.y > SCREEN_HEIGHT + self.rect.height:
-            self.reset_pos()
- 
- 
+        """ position of block. """
+        self.rect.y = 0
+        self.rect.x = 0
+  
 class Player(pygame.sprite.Sprite):
     """ The class is the player-controlled sprite. """
  
@@ -57,10 +48,13 @@ class Player(pygame.sprite.Sprite):
         """Constructor function"""
         # Call the parent's constructor
         super().__init__()
- 
+        
         # Set height, width
-        self.image = pygame.Surface([15, 15])
-        self.image.fill(BLACK)
+        self.player_x = 20
+        self.player_y = 20
+        
+        self.image = pygame.Surface([self.player_x, self.player_y])
+        self.image.fill(BLUE)
  
         # Make our top-left corner the passed-in location.
         self.rect = self.image.get_rect()
@@ -81,6 +75,16 @@ class Player(pygame.sprite.Sprite):
         """ Find a new position for the player"""
         self.rect.x += self.change_x
         self.rect.y += self.change_y
+
+        if self.rect.x >= (SCREEN_WIDTH + 2) - self.player_x:
+            self.rect.x -= 10
+        if self.rect.x <= 0:
+            self. rect.x += 10
+        if self.rect.y >= 0:
+            self.rect.y -= 10
+        if self.rect.y <= (SCREEN_HEIGHT + 2) - self.player_y:
+            self.rect.y  += 10
+        
         
 class Game(object):
     """ This class represents an instance of the game. If we need to
@@ -95,22 +99,34 @@ class Game(object):
         self.game_over = False
  
         # Create sprite lists
-        self.block_list = pygame.sprite.Group()
         self.all_sprites_list = pygame.sprite.Group()
+        self.good_blocks_list = pygame.sprite.Group()
+        self.bad_blocks_list = pygame.sprite.Group()
  
-        # Create the block sprites
+        # Create the good block sprites
         for i in range(50):
             block = Block()
+            block.image.fill(GREEN)
  
             block.rect.x = random.randrange(SCREEN_WIDTH)
-            block.rect.y = random.randrange(-300, SCREEN_HEIGHT)
+            block.rect.y = random.randrange(SCREEN_HEIGHT)
  
-            self.block_list.add(block)
+            self.good_blocks_list.add(block)
             self.all_sprites_list.add(block)
+
+        # Create the bad block sprites
+        for i in range(50):
+            block = Block()
+            block.image.fill(RED)
+ 
+            block.rect.x = random.randrange(SCREEN_WIDTH)
+            block.rect.y = random.randrange(SCREEN_HEIGHT)
+ 
+            self.bad_blocks_list.add(block)
+            self.all_sprites_list.add(block)   
  
         # Create the player
-        self.player = Player(0, 0)
-        self.player.image.fill(BLUE)
+        self.player = Player(5, 5)
         self.all_sprites_list.add(self.player)
  
     def process_events(self):
@@ -120,6 +136,9 @@ class Game(object):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 return True
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if self.game_over:
+                    self.__init__()
 
             # Set the speed based on the key pressed
             elif event.type == pygame.KEYDOWN:
@@ -154,17 +173,28 @@ class Game(object):
             # Move all the sprites
             self.all_sprites_list.update()
  
-            # See if the player block has collided with anything.
-            blocks_hit_list = pygame.sprite.spritecollide(self.player, self.block_list, True)
+            # See if the player block has collided with good blocks.
+            blocks_hit_good_list = pygame.sprite.spritecollide(self.player, self.good_blocks_list, True)
  
             # Check the list of collisions.
-            for block in blocks_hit_list:
+            for block in blocks_hit_good_list:
                 self.score += 1
                 print(self.score)
                 # You can do something with "block" here.
+
+            # See if the player block has collided with bad blocks.
+            blocks_hit_bad_list = pygame.sprite.spritecollide(self.player, self.bad_blocks_list, True)
  
-            if len(self.block_list) == 0:
+            # Check the list of collisions.
+            for block in blocks_hit_bad_list:
+                self.score -= 1
+                print(self.score)
+                # You can do something with "block" here.    
+ 
+            if len(self.good_blocks_list) == 0:
                 self.game_over = True
+
+            print(self.good_blocks_list)   
  
     def display_frame(self, screen):
         """ Display everything to the screen for the game. """
@@ -180,6 +210,12 @@ class Game(object):
  
         if not self.game_over:
             self.all_sprites_list.draw(screen)
+
+            font_2 = pygame.font.SysFont("serif", 25)
+            text_2 = font_2.render("SCORE: " + str(self.score), True, BLACK)
+            center_x_2 = (SCREEN_WIDTH // 2) - (text_2.get_width() // 2)
+            center_y_2 = (SCREEN_HEIGHT // 2) - (text_2.get_height() // 2)
+            screen.blit(text_2, [center_x_2, center_y_2])
  
         pygame.display.flip()
  
