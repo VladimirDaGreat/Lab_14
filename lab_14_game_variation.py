@@ -1,12 +1,12 @@
 """
-Show the proper way to organize a game using the a game class.
- 
-Sample Python/Pygame Programs
-Simpson College Computer Science
-http://programarcadegames.com/
-http://simpson.edu/computer-science/
- 
-Explanation video: http://youtu.be/O4Y5KrNgP_c
+
+Lab_14 completed by VladimirDaGreat
+Started: 19/05/2018
+Finished: 00/00/0000/
+
+A game demonstrating the game class and using sprites. Task was to modify
+chapter 13's example.
+
 """
  
 import pygame
@@ -17,6 +17,7 @@ BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 GREEN = (0, 255, 0)
 RED = (255, 0, 0)
+BLUE = (0, 0, 255)
  
 SCREEN_WIDTH = 700
 SCREEN_HEIGHT = 500
@@ -49,20 +50,38 @@ class Block(pygame.sprite.Sprite):
  
  
 class Player(pygame.sprite.Sprite):
-    """ This class represents the player. """
-    def __init__(self):
+    """ The class is the player-controlled sprite. """
+ 
+    # -- Methods
+    def __init__(self, x, y):
+        """Constructor function"""
+        # Call the parent's constructor
         super().__init__()
-        self.image = pygame.Surface([20, 20])
-        self.image.fill(RED)
+ 
+        # Set height, width
+        self.image = pygame.Surface([15, 15])
+        self.image.fill(BLACK)
+ 
+        # Make our top-left corner the passed-in location.
         self.rect = self.image.get_rect()
+        self.rect.x = x
+        self.rect.y = y
+ 
+        # -- Attributes
+        # Set speed vector
+        self.change_x = 0
+        self.change_y = 0
+ 
+    def changespeed(self, x, y):
+        """ Change the speed of the player"""
+        self.change_x += x
+        self.change_y += y
  
     def update(self):
-        """ Update the player location. """
-        pos = pygame.mouse.get_pos()
-        self.rect.x = pos[0]
-        self.rect.y = pos[1]
- 
- 
+        """ Find a new position for the player"""
+        self.rect.x += self.change_x
+        self.rect.y += self.change_y
+        
 class Game(object):
     """ This class represents an instance of the game. If we need to
         reset the game we'd just need to create a new instance of this
@@ -90,7 +109,8 @@ class Game(object):
             self.all_sprites_list.add(block)
  
         # Create the player
-        self.player = Player()
+        self.player = Player(0, 0)
+        self.player.image.fill(BLUE)
         self.all_sprites_list.add(self.player)
  
     def process_events(self):
@@ -100,10 +120,29 @@ class Game(object):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 return True
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                if self.game_over:
-                    self.__init__()
- 
+
+            # Set the speed based on the key pressed
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_LEFT:
+                    self.player.changespeed(-3, 0)
+                elif event.key == pygame.K_RIGHT:
+                    self.player.changespeed(3, 0)
+                elif event.key == pygame.K_UP:
+                   self. player.changespeed(0, -3)
+                elif event.key == pygame.K_DOWN:
+                    self.player.changespeed(0, 3)
+     
+            # Reset speed when key goes up
+            elif event.type == pygame.KEYUP:
+                if event.key == pygame.K_LEFT:
+                    self.player.changespeed(3, 0)
+                elif event.key == pygame.K_RIGHT:
+                    self.player.changespeed(-3, 0)
+                elif event.key == pygame.K_UP:
+                    self.player.changespeed(0, 3)
+                elif event.key == pygame.K_DOWN:
+                    self.player.changespeed(0, -3)
+               
         return False
  
     def run_logic(self):
